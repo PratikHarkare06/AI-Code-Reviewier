@@ -149,7 +149,7 @@ with st.sidebar:
         <div style="text-align: center; padding-bottom: 20px;">
             <img src="https://cdn-icons-png.flaticon.com/512/2920/2920277.png" width="60" style="margin-bottom: 10px;">
             <h1 style="margin-top: 0; font-size: 1.8rem; padding-bottom: 5px;">AI Code Reviewer</h1>
-            <p style="color: #8b949e; font-size: 0.85rem; margin: 0;">Made with ❤️ by Pratik</p>
+            <p style="color: #8b949e; font-size: 0.85rem; margin: 0;">Elevate Your Code Quality</p>
         </div>
     """, unsafe_allow_html=True)
     
