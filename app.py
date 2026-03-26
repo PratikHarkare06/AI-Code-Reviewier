@@ -523,9 +523,41 @@ Issues Found: {total_issues}
     if search_query:
         st.markdown(f"[Search on StackOverflow](https://stackoverflow.com/search?q={search_query.replace(' ', '+')}) | [Search on Google](https://www.google.com/search?q={search_query.replace(' ', '+')})")
 
-# -----------------------------------------------------------------------------
+# --------------------------------------------------
+# PAGE 3: AI ASSISTANT
+# --------------------------------------------------
+elif st.session_state.nav_selection == "AI Assistant":
+    st.markdown("### 💬 AI Assistant")
+    
+    if not st.session_state.ai_suggestions:
+         st.warning("⚠️ Please run a code analysis first so the AI has context to answer your questions.")
+    else:
+        st.caption("Ask questions about your code, the analysis, or improvement strategies.")
+        
+        for message in st.session_state.chat_history:
+            with st.chat_message(message["role"]):
+                st.markdown(message["content"])
+
+        if prompt := st.chat_input("Ask a follow-up question..."):
+            st.session_state.chat_history.append({"role": "user", "content": prompt})
+            with st.chat_message("user"):
+                st.markdown(prompt)
+
+            with st.chat_message("assistant"):
+                with st.spinner("Thinking..."):
+                    response = get_chat_response(
+                        st.session_state.code_input, 
+                        st.session_state.ai_suggestions, 
+                        prompt,
+                        chat_history=st.session_state.chat_history[:-1],
+                        language=language
+                    )
+                    st.markdown(response)
+                    st.session_state.chat_history.append({"role": "assistant", "content": response})
+
+# --------------------------------------------------
 # PAGE 4: DASHBOARD
-# -----------------------------------------------------------------------------
+# --------------------------------------------------
 elif st.session_state.nav_selection == "Dashboard":
     st.markdown("### 📊 Codebase Analytics")
     
@@ -560,9 +592,9 @@ elif st.session_state.nav_selection == "Dashboard":
         fig3 = px.histogram(df, x="score", nbins=10, template="plotly_dark")
         st.plotly_chart(fig3, use_container_width=True)
 
-# -----------------------------------------------------------------------------
+# --------------------------------------------------
 # PAGE 5: CI/CD SETUP
-# -----------------------------------------------------------------------------
+# --------------------------------------------------
 elif st.session_state.nav_selection == "CI/CD Setup":
     st.markdown("### ⚙️ CI/CD Workflow Generator")
     st.caption("Generate automated GitHub Actions to review your code on every push.")
@@ -636,50 +668,16 @@ jobs:
         st.code(workflows[ci_lang], language="yaml")
         st.download_button("📥 Download .yml", workflows[ci_lang], file_name="review-workflow.yml")
 
-# -----------------------------------------------------------------------------
+# --------------------------------------------------
 # PAGE 6: HISTORY
-# -----------------------------------------------------------------------------
-elif st.session_state.nav_selection == "History":
-    st.markdown("### 💬 AI Assistant")
-    
-    if not st.session_state.ai_suggestions:
-         st.warning("⚠️ Please run a code analysis first so the AI has context to answer your questions.")
-    else:
-        st.caption("Ask questions about your code, the analysis, or improvement strategies.")
-        
-        for message in st.session_state.chat_history:
-            with st.chat_message(message["role"]):
-                st.markdown(message["content"])
-
-        if prompt := st.chat_input("Ask a follow-up question..."):
-            st.session_state.chat_history.append({"role": "user", "content": prompt})
-            with st.chat_message("user"):
-                st.markdown(prompt)
-
-            with st.chat_message("assistant"):
-                with st.spinner("Thinking..."):
-                    response = get_chat_response(
-                        st.session_state.code_input, 
-                        st.session_state.ai_suggestions, 
-                        prompt,
-                        chat_history=st.session_state.chat_history[:-1], # Don't include the current prompt yet
-                        language=language
-                    )
-                    st.markdown(response)
-                    st.session_state.chat_history.append({"role": "assistant", "content": response})
-
-# -----------------------------------------------------------------------------
-# PAGE 4: HISTORY
-# -----------------------------------------------------------------------------
+# --------------------------------------------------
 elif st.session_state.nav_selection == "History":
     st.markdown("### 📜 Analysis History")
     
     history_data = load_history()
-    
     if not history_data:
         st.info("No history found. Run an analysis to see it here.")
     else:
-        # Display as a table or cards
         for i, entry in enumerate(history_data):
             with st.expander(f"{entry['date']} at {entry['timestamp']} - Grade: {entry['quality_grade']}"):
                 st.write(f"**Language:** {entry.get('language', 'N/A')}")
