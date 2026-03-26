@@ -194,6 +194,14 @@ with st.sidebar:
     deep_scan = st.toggle("Deep Vulnerability Scan", value=False)
     complex_analysis = st.toggle("Code Complexity Analysis", value=False)
 
+    st.markdown("---")
+    st.markdown("### 🎨 Editor Settings")
+    editor_theme = st.selectbox("Editor Theme", 
+        ["monokai", "tomorrow", "twilight", "github", "chrome", "solarized_dark", "solarized_light", "nord_dark"],
+        index=0)
+    font_size = st.slider("Font Size", 8, 32, 14)
+    key_binding = st.selectbox("Keybinding", ["vscode", "vim", "emacs"], index=0)
+
 
 # -----------------------------------------------------------------------------
 # Session State & Logic
@@ -312,9 +320,9 @@ if st.session_state.nav_selection == "Code Editor":
         code = st_ace(
             value=st.session_state.code_input,
             language=language.lower(),
-            theme="monokai",
-            keybinding="vscode",
-            font_size=14,
+            theme=editor_theme,
+            keybinding=key_binding,
+            font_size=font_size,
             tab_size=4,
             height=500,
             key="ace_editor"
