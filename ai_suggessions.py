@@ -194,32 +194,55 @@ CODE TO ANALYZE
 # Chat Functionality 
 # --------------------------------------------------
 
-def get_chat_response(code_context: str, analysis_result: str, user_question: str, language: str = "Python") -> str:
+def get_chat_response(code_context: str, analysis_result: str, user_question: str, chat_history: list = None, language: str = "Python") -> str:
     """
-    Handle user follow-up questions based on the code and analysis.
+    Handle user follow-up questions with full conversation history.
     """
     lang_lower = language.lower()
-    prompt = f"""
-You are a helpful AI coding assistant specializing in {language}. The user has some code and an analysis of that code. 
-They are asking a follow-up question. Answer their question clearly and concisely.
+    
+    # Format chat history for the prompt
+    history_text = ""
+    if chat_history:
+        for msg in chat_history[-5:]: # Include last 5 messages for context
+            role = "User" if msg["role"] == "user" else "Assistant"
+            history_text += f"{role}: {msg['content']}\n"
 
-CONTEXT:
-Code:
+    prompt = f"""
+You are a **senior {language} expert and helpful coding assistant**.
+The user is asking questions about their code and a previously provided code review.
+
+### TARGET LANGUAGE: {language}
+
+### CODE CONTEXT:
 ```{lang_lower}
 {code_context}
 ```
 
-Analysis Summary provided to user:
-{analysis_result[:2000]}... (truncated)
+### RECENT ANALYSIS SUMMARY:
+{analysis_result[:1500]}...
 
-USER QUESTION:
+### CONVERSATION HISTORY:
+{history_text}
+
+### USER'S NEW QUESTION:
 {user_question}
 
-YOUR ANSWER:
+### YOUR INSTRUCTIONS:
+- Answer the question specifically in the context of the provided code.
+- If the user asks for more code, provide it in ```{lang_lower} blocks.
+- Be concise but thorough.
+- Mention specific line numbers or patterns if relevant.
+- STICK TO {language} best practices.
+
+YOUR RESPONSE:
 """
     try:
         response = model.invoke(prompt)
-        return response.content
+        # Clean up response if it echoes back the prompt
+        content = response.content
+        if "YOUR RESPONSE:" in content:
+            content = content.split("YOUR RESPONSE:")[-1].strip()
+        return content
     except Exception as error:
         return f"Error getting chat response: {str(error)}"
 

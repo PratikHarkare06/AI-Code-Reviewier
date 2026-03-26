@@ -662,6 +662,7 @@ elif st.session_state.nav_selection == "History":
                         st.session_state.code_input, 
                         st.session_state.ai_suggestions, 
                         prompt,
+                        chat_history=st.session_state.chat_history[:-1], # Don't include the current prompt yet
                         language=language
                     )
                     st.markdown(response)
