@@ -1,19 +1,18 @@
 # AI Code Reviewer 🤖
 
-An intelligent, AI-powered code analysis tool designed to help developers write better, cleaner, and more secure code. This application leverages **Streamlit** for the frontend and **Hugging Face models** (Qwen 2.5) via **LangChain** to provide deep insights, refactoring suggestions, and security audits.
+An intelligent, AI-powered code analysis tool designed to help developers write better, cleaner, and more secure code. This application leverages **Streamlit** for the frontend and **Hugging Face models** (Qwen 2.5) via **LangChain** to provide professional-grade insights across multiple languages.
 
 ## 🚀 Key Features
 
-*   **🌍 Multi-Language Support**: Professional-grade reviews for **Python, JavaScript, TypeScript, Java, C++, Go, and Rust**.
-*   **💻 Ace Code Editor**: Integrated professional editor with syntax highlighting, themes (Monokai), and VS Code keybindings.
+*   **🌍 Multi-Language Support**: Professional reviews for **Python, JavaScript, TypeScript, Java, C++, Go, and Rust**.
+*   **🎨 Customizable Ace Editor**: Integrated professional editor with **10+ Themes** (Monokai, Nord, Solarized), dynamic **Font Resizing**, and **Keybindings** (VS Code, Vim, Emacs).
 *   **✨ One-Click AI Refactoring**: Automatically optimizes your code for performance, readability, and DRY principles.
-*   **🧪 Automated Unit Test Generation**: Generates comprehensive unit tests tailored to your specific language and framework (e.g., `pytest`, `Jest`, `JUnit`).
-*   **📊 Visual Analytics Dashboard**: Interactive charts (powered by Plotly) to track quality trends, language distribution, and score history.
+*   **🧪 Automated Unit Test Generation**: Generates comprehensive tests tailored to your specific language and framework (e.g., `pytest`, `Jest`, `JUnit`).
+*   **📊 Visual Analytics Dashboard**: Interactive charts (Plotly) to track quality trends, language distribution, and score history.
 *   **📝 PR Summary Generator**: Automatically writes professional GitHub/GitLab Pull Request descriptions.
 *   **📖 Junior-Friendly Explainer**: Break down complex logic line-by-line for easier learning and onboarding.
 *   **⚙️ CI/CD Workflow Builder**: Generate GitHub Actions YAML files to automate reviews in your repository.
 *   **🛡️ Security & Performance Audit**: Deep scans for OWASP vulnerabilities and performance bottlenecks.
-*   **🆚 Visual Code Diff**: Side-by-side comparison of your original code versus the AI-improved version.
 *   **🔍 Context Search**: Direct links to StackOverflow and Google Documentation for identified issues.
 *   **💬 AI Assistant (with Memory)**: Multi-turn chat to ask follow-up questions about the code review.
 
@@ -23,27 +22,14 @@ An intelligent, AI-powered code analysis tool designed to help developers write 
 *   Python 3.8+
 *   A Hugging Face Account & Access Token
 
-### 1. Clone the Repository
+### 1. Clone & Setup
 ```bash
 git clone https://github.com/PratikHarkare06/AI-Code-Reviewier.git
 cd AI-Code-Reviewier
-```
-
-### 2. Create a Virtual Environment (Optional)
-```bash
-python -m venv venv
-# Linux/Mac:
-source venv/bin/activate
-# Windows:
-venv\Scripts\activate
-```
-
-### 3. Install Dependencies
-```bash
 pip install -r requirements.txt
 ```
 
-### 4. Configure Environment Variables
+### 2. Configure Environment
 Create a `.env` file in the root directory:
 ```ini
 HF_TOKEN=your_huggingface_access_token_here
@@ -52,28 +38,11 @@ HF_TOKEN=your_huggingface_access_token_here
 ## 🏃‍♂️ Usage
 
 1.  **Launch App**: `streamlit run app.py`
-2.  **Select Language**: Choose your programming language from the sidebar.
-3.  **Input Code**: Paste your code or upload a file directly into the **Ace Editor**.
-4.  **Run Analysis**: Click **⚡ Run Analysis** to get a quality grade and line-by-line feedback.
-5.  **Explore Tools**: Use the sidebar to navigate to:
-    *   **Dashboard**: Visualize your codebase health.
-    *   **CI/CD Setup**: Generate automated workflows.
-    *   **AI Assistant**: Discuss the analysis in-depth.
-
-## 📂 Project Structure
-
-```
-├── app.py                 # Main application UI and multi-page routing
-├── ai_suggessions.py      # Core AI logic (Refactoring, Tests, Chat, PRs)
-├── code_parser.py         # Multi-language syntax checkers
-├── error_detector.py      # Static analysis (unused vars/imports for Python)
-├── history.json           # Local session history storage
-├── requirements.txt       # Project dependencies (Streamlit, Plotly, Ace, etc.)
-└── .env                   # Sensitive API keys (Not committed)
-```
+2.  **Pick Theme & Language**: Adjust your editor settings and source language in the sidebar.
+3.  **Run Analysis**: Click **⚡ Run Analysis** to get a quality grade and line-by-line feedback.
+4.  **Explore Tabs**: Navigate through the **Assistant**, **Dashboard**, and **CI/CD Build** tabs to take full control of your codebase.
 
 ## 🤝 Contributing
-
 Contributions are welcome! Please feel free to submit a Pull Request.
 
 ---
