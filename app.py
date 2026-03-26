@@ -1,6 +1,6 @@
 import streamlit as st
 from code_parser import parse_code
-from ai_suggessions import get_ai_suggestion, get_chat_response, get_unit_tests
+from ai_suggessions import get_ai_suggestion, get_chat_response, get_unit_tests, get_refactored_code, get_code_explanation, get_pr_summary
 from error_detector import get_all_errors
 import time
 try:
@@ -212,6 +212,12 @@ if 'chat_history' not in st.session_state:
     st.session_state.chat_history = []
 if 'unit_tests' not in st.session_state:
     st.session_state.unit_tests = None
+if 'refactored_code' not in st.session_state:
+    st.session_state.refactored_code = None
+if 'code_explanation' not in st.session_state:
+    st.session_state.code_explanation = None
+if 'pr_summary' not in st.session_state:
+    st.session_state.pr_summary = None
 
 # Header
 st.title("Intelligent Code Analysis")
@@ -331,6 +337,9 @@ if st.session_state.nav_selection == "Code Editor":
                 # 1. Clear State
                 st.session_state.chat_history = []
                 st.session_state.unit_tests = None
+                st.session_state.refactored_code = None
+                st.session_state.code_explanation = None
+                st.session_state.pr_summary = None
                 st.session_state.last_analyzed = time.strftime("%H:%M:%S")
                 
                 # 2. Run Analysis
@@ -375,7 +384,7 @@ if st.session_state.nav_selection == "Code Editor":
 elif st.session_state.nav_selection == "Analysis Report":
     
     # Header
-    r_col1, r_col2 = st.columns([0.7, 0.3], vertical_alignment="center")
+    r_col1, r_col2 = st.columns([0.55, 0.45], vertical_alignment="center")
     with r_col1:
         img_col, txt_col = st.columns([0.15, 0.85], vertical_alignment="center")
         with img_col:
@@ -403,7 +412,7 @@ elif st.session_state.nav_selection == "Analysis Report":
                         st.session_state.ai_suggestions = suggestion
                         st.rerun()
             with btn_col2:
-                if st.button("🧪 Generate Unit Tests", type="secondary", use_container_width=True):
+                if st.button("🧪 Unit Tests", type="secondary", use_container_width=True, help="Generate automated tests"):
                     with st.spinner("🧪 Crafting comprehensive tests..."):
                         tests = get_unit_tests(st.session_state.code_input, language=language)
                         st.session_state.unit_tests = tests
@@ -515,6 +524,41 @@ Issues Found: {total_issues}
         if st.session_state.unit_tests:
             with st.expander("🧪 Generated Unit Tests", expanded=True):
                 st.markdown(st.session_state.unit_tests)
+        
+        # New Features Action Bar
+        st.markdown("---")
+        st.subheader("🛠️ Advanced Operations")
+        feat_col1, feat_col2, feat_col3 = st.columns(3)
+        
+        with feat_col1:
+            if st.button("✨ Refactor Code", use_container_width=True, help="Get an optimized version of your code"):
+                with st.spinner("✨ Optimizing..."):
+                    st.session_state.refactored_code = get_refactored_code(st.session_state.code_input, language=language)
+        
+        with feat_col2:
+            if st.button("📖 Explain Code", use_container_width=True, help="Get a line-by-line explanation"):
+                with st.spinner("📖 Mentoring..."):
+                    st.session_state.code_explanation = get_code_explanation(st.session_state.code_input, language=language)
+        
+        with feat_col3:
+            if st.button("📝 PR Summary", use_container_width=True, help="Generate a Pull Request description"):
+                with st.spinner("📝 Writing PR..."):
+                    st.session_state.pr_summary = get_pr_summary(st.session_state.code_input, language=language)
+
+        # Display Results
+        if st.session_state.refactored_code:
+            with st.expander("✨ Refactored Code", expanded=True):
+                st.code(st.session_state.refactored_code, language=language.lower())
+                st.download_button("📥 Download Refactored File", st.session_state.refactored_code, file_name=f"refactored_code.{language.lower()}")
+
+        if st.session_state.code_explanation:
+            with st.expander("📖 Code Explanation", expanded=True):
+                st.markdown(st.session_state.code_explanation)
+
+        if st.session_state.pr_summary:
+            with st.expander("📝 Pull Request Summary", expanded=True):
+                st.markdown(st.session_state.pr_summary)
+                st.download_button("📥 Download PR Summary (MD)", st.session_state.pr_summary, file_name="PR_summary.md")
 
     # Search Integration
     st.markdown("---")

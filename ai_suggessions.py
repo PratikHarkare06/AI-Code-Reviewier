@@ -298,6 +298,86 @@ REQUIRED OUTPUT FORMAT:
     except Exception as error:
         return f"Error generating unit tests: {str(error)}"
 
+def get_refactored_code(code: str, language: str = "Python") -> str:
+    """
+    Provide a fully refactored and optimized version of the code.
+    """
+    lang_lower = language.lower()
+    prompt = f"""
+You are an **Expert {language} Refactorer**. 
+Take the following code and provide a clean, optimized, and best-practice version:
+
+```{lang_lower}
+{code}
+```
+
+### GOALS:
+- DRY (Don't Repeat Yourself)
+- SOLID principles
+- Performance optimization
+- Improved readability and naming
+- Output ONLY the improved code.
+
+REFACTORED CODE:
+"""
+    try:
+        response = model.invoke(prompt)
+        return response.content
+    except Exception as error:
+        return f"Error refactoring code: {str(error)}"
+
+def get_code_explanation(code: str, language: str = "Python") -> str:
+    """
+    Explain the code line-by-line for a junior developer.
+    """
+    lang_lower = language.lower()
+    prompt = f"""
+You are a **Patient Technical Mentor**. 
+Explain the following {language} code to a junior developer:
+
+```{lang_lower}
+{code}
+```
+
+### STYLE:
+- Use bullet points.
+- Explain *why* certain patterns are used.
+- Keep it friendly and clear.
+
+EXPLANATION:
+"""
+    try:
+        response = model.invoke(prompt)
+        return response.content
+    except Exception as error:
+        return f"Error explaining code: {str(error)}"
+
+def get_pr_summary(code: str, language: str = "Python") -> str:
+    """
+    Generate a professional Pull Request description.
+    """
+    prompt = f"""
+You are a **Senior Developer**. 
+Write a professional GitHub Pull Request summary for the following {language} code changes:
+
+```{language.lower()}
+{code}
+```
+
+### FOLDER STRUCTURE:
+- **Title**: A concise title
+- **Summary**: What was changed?
+- **Impact**: Why was this change made?
+- **Checklist**: Standard PR checklist items
+
+PR SUMMARY (Markdown):
+"""
+    try:
+        response = model.invoke(prompt)
+        return response.content
+    except Exception as error:
+        return f"Error generating PR summary: {str(error)}"
+
 # --------------------------------------------------
 # Local Test (Optional)
 # --------------------------------------------------
