@@ -33,3 +33,6 @@ torchaudio
 
 # Streamlit
 streamlit
+plotly
+pandas
+streamlit-ace

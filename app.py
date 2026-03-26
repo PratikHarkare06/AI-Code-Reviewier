@@ -1,8 +1,13 @@
 import streamlit as st
 from code_parser import parse_code
-from ai_suggessions import get_ai_suggestion, get_chat_response
+from ai_suggessions import get_ai_suggestion, get_chat_response, get_unit_tests
 from error_detector import get_all_errors
 import time
+try:
+    from streamlit_ace import st_ace
+    HAS_ACE = True
+except ImportError:
+    HAS_ACE = False
 
 # Configure page settings - Must be first streamlit command
 st.set_page_config(
@@ -160,10 +165,11 @@ with st.sidebar:
         st.session_state.nav_selection = "Code Editor"
         
     st.subheader("📍 Navigation")
+    pages = ["Code Editor", "Analysis Report", "AI Assistant", "Dashboard", "CI/CD Setup", "History"]
     page_selection = st.radio(
         "Go to:", 
-        ["Code Editor", "Analysis Report", "AI Assistant", "History"], 
-        index=["Code Editor", "Analysis Report", "AI Assistant", "History"].index(st.session_state.nav_selection),
+        pages, 
+        index=pages.index(st.session_state.nav_selection),
         key="nav_radio",
         label_visibility="collapsed"
     )
@@ -175,13 +181,18 @@ with st.sidebar:
     st.markdown("---")
     
     st.subheader("⚙️ Configuration")
-    language = st.selectbox("Source Language", ["Python", "JavaScript", "TypeScript", "Go", "Rust"], index=0)
+    language = st.selectbox("Source Language", ["Python", "JavaScript", "TypeScript", "Java", "C++", "Go", "Rust"], index=0)
     
     st.markdown("### Focus Areas")
-    check_security = st.checkbox("Security", value=True)
-    check_perf = st.checkbox("Performance", value=True)
-    check_style = st.checkbox("PEP8 / Style", value=True)
-    check_bugs = st.checkbox("Potential Bugs", value=True)
+    check_security = st.checkbox("Security Audit", value=True)
+    check_perf = st.checkbox("Performance Audit", value=True)
+    check_style = st.checkbox("Style & Standards", value=True)
+    check_bugs = st.checkbox("Logic & Bugs", value=True)
+    
+    st.markdown("---")
+    st.markdown("### 🛡️ Advanced Analysis")
+    deep_scan = st.toggle("Deep Vulnerability Scan", value=False)
+    complex_analysis = st.toggle("Code Complexity Analysis", value=False)
 
 
 # -----------------------------------------------------------------------------
@@ -199,6 +210,8 @@ if 'last_analyzed' not in st.session_state:
     st.session_state.last_analyzed = None
 if 'chat_history' not in st.session_state:
     st.session_state.chat_history = []
+if 'unit_tests' not in st.session_state:
+    st.session_state.unit_tests = None
 
 # Header
 st.title("Intelligent Code Analysis")
@@ -229,11 +242,13 @@ def save_to_history(entry):
     with open(HISTORY_FILE, "w") as f:
         json.dump(history, f, indent=4)
 
-def extract_improved_code(ai_text):
+def extract_improved_code(ai_text, language="Python"):
     """Simple regex to extract code block after 'Improved Code'."""
     import re
-    # Look for python code block after "Improved Code"
-    match = re.search(r"## Improved Code\s*```python\s*(.*?)```", ai_text, re.DOTALL)
+    lang_lower = language.lower()
+    # Look for code block after "Improved Code" with the specific language tag
+    pattern = rf"## Improved Code\s*```{lang_lower}\s*(.*?)```"
+    match = re.search(pattern, ai_text, re.DOTALL)
     if match:
         return match.group(1).strip()
     return None
@@ -259,15 +274,54 @@ def generate_diff_html(original, improved):
 # PAGE 1: CODE EDITOR
 # -----------------------------------------------------------------------------
 if st.session_state.nav_selection == "Code Editor":
-    st.markdown("### 💻 Source Code Input")
-    code = st.text_area(
-        "Code Editor",
-        value=st.session_state.code_input,
-        height=500,
-        placeholder=f"Paste your {language} code here...",
-        label_visibility="collapsed",
-        key="code_editor_area"
-    )
+    # 🆕 NEW: File Upload Support
+    st.markdown("### 📁 File Upload (Optional)")
+    uploaded_file = st.file_uploader("Upload a source file", type=["py", "js", "ts", "java", "cpp", "go", "rs", "txt"], label_visibility="collapsed")
+    
+    if uploaded_file is not None:
+        try:
+            # Auto-detect language from extension
+            ext = uploaded_file.name.split(".")[-1].lower()
+            ext_map = {
+                "py": "Python",
+                "js": "JavaScript",
+                "ts": "TypeScript",
+                "java": "Java",
+                "cpp": "C++",
+                "go": "Go",
+                "rs": "Rust"
+            }
+            if ext in ext_map:
+                language = ext_map[ext]
+                # Update language in session state if needed, but for now we just show a hint
+                st.info(f"Detected {language} file: `{uploaded_file.name}`")
+            
+            code_content = uploaded_file.getvalue().decode("utf-8")
+            st.session_state.code_input = code_content
+        except Exception as e:
+            st.error(f"Error reading file: {e}")
+
+    st.markdown("### 💻 Source Code Editor")
+    if HAS_ACE:
+        code = st_ace(
+            value=st.session_state.code_input,
+            language=language.lower(),
+            theme="monokai",
+            keybinding="vscode",
+            font_size=14,
+            tab_size=4,
+            height=500,
+            key="ace_editor"
+        )
+    else:
+        code = st.text_area(
+            "Code Editor",
+            value=st.session_state.code_input,
+            height=500,
+            placeholder=f"Paste your {language} code or upload a file above...",
+            label_visibility="collapsed",
+            key="code_editor_area"
+        )
     st.session_state.code_input = code
     
     col_btn, col_empty = st.columns([1, 4])
@@ -276,21 +330,21 @@ if st.session_state.nav_selection == "Code Editor":
             if code.strip():
                 # 1. Clear State
                 st.session_state.chat_history = []
+                st.session_state.unit_tests = None
                 st.session_state.last_analyzed = time.strftime("%H:%M:%S")
                 
                 # 2. Run Analysis
                 with st.spinner("🔍  Analyzing code structure and safety..."):
                     # Static
                     if language == "Python":
-                        parse_result = parse_code(code)
-                        static_errors = get_all_errors(code)
+                        parse_result = parse_code(code, language=language)
+                        static_errors = get_all_errors(code, language=language)
                         st.session_state.analysis_result = {"parse": parse_result, "static": static_errors}
                     else:
                         st.session_state.analysis_result = {"parse": {"success": True}, "static": {}}
                     
                     # AI
-                    config_context = f"\n# ANALYSIS CONFIG: Security={check_security}, Performance={check_perf}"
-                    suggestion = get_ai_suggestion(code)
+                    suggestion = get_ai_suggestion(code, language=language)
                     st.session_state.ai_suggestions = suggestion
                 
                 # 3. Save to History
@@ -341,11 +395,19 @@ elif st.session_state.nav_selection == "Analysis Report":
             
     with r_col2:
         if st.session_state.ai_suggestions:
-            if st.button("🔄 Regenerate", type="primary", use_container_width=True, help="Get new AI suggestions"):
-                 with st.spinner("🤖 Generating fresh insights..."):
-                    suggestion = get_ai_suggestion(st.session_state.code_input)
-                    st.session_state.ai_suggestions = suggestion
-                    st.rerun()
+            btn_col1, btn_col2 = st.columns(2)
+            with btn_col1:
+                if st.button("🔄 Regenerate", type="primary", use_container_width=True, help="Get new AI suggestions"):
+                     with st.spinner("🤖 Generating fresh insights..."):
+                        suggestion = get_ai_suggestion(st.session_state.code_input, language=language)
+                        st.session_state.ai_suggestions = suggestion
+                        st.rerun()
+            with btn_col2:
+                if st.button("🧪 Generate Unit Tests", type="secondary", use_container_width=True):
+                    with st.spinner("🧪 Crafting comprehensive tests..."):
+                        tests = get_unit_tests(st.session_state.code_input, language=language)
+                        st.session_state.unit_tests = tests
+                        st.success("Tests generated!")
 
     # Empty State check
     if not st.session_state.ai_suggestions:
@@ -380,7 +442,7 @@ elif st.session_state.nav_selection == "Analysis Report":
         # --- NEW: Action Bar (Diff + Export) ---
         ac1, ac2 = st.columns([1, 1])
         
-        improved_code = extract_improved_code(st.session_state.ai_suggestions)
+        improved_code = extract_improved_code(st.session_state.ai_suggestions, language=language)
         
         # --- NEW: Action Bar (Export) ---
         st.markdown("<br>", unsafe_allow_html=True)
@@ -388,13 +450,13 @@ elif st.session_state.nav_selection == "Analysis Report":
         # Download Report Button
         d_col1, d_col2 = st.columns([1, 4])
         with d_col1:
-             report_text = f"""# AI Code Analysis Report
+             report_text = f"""# AI Code Analysis Report ({language})
 Date: {time.strftime("%Y-%m-%d %H:%M:%S")}
 Quality Grade: {quality_grade}
 Issues Found: {total_issues}
 
 ## Original Code
-```python
+```{language.lower()}
 {st.session_state.code_input}
 ```
 
@@ -410,7 +472,7 @@ Issues Found: {total_issues}
              )
 
         # --- Diff View (Full Width) ---
-        improved_code = extract_improved_code(st.session_state.ai_suggestions)
+        improved_code = extract_improved_code(st.session_state.ai_suggestions, language=language)
         
         if improved_code:
              st.markdown("<br>", unsafe_allow_html=True)
@@ -449,10 +511,135 @@ Issues Found: {total_issues}
         with st.expander("🤖 Deep Code Review", expanded=True):
             st.markdown(st.session_state.ai_suggestions)
 
+        # Unit Tests
+        if st.session_state.unit_tests:
+            with st.expander("🧪 Generated Unit Tests", expanded=True):
+                st.markdown(st.session_state.unit_tests)
+
+    # Search Integration
+    st.markdown("---")
+    st.subheader("🔍 Context Support")
+    search_query = st.text_input("Search for help / Documentation", placeholder="Search for library docs, errors, etc.")
+    if search_query:
+        st.markdown(f"[Search on StackOverflow](https://stackoverflow.com/search?q={search_query.replace(' ', '+')}) | [Search on Google](https://www.google.com/search?q={search_query.replace(' ', '+')})")
+
 # -----------------------------------------------------------------------------
-# PAGE 3: AI ASSISTANT
+# PAGE 4: DASHBOARD
 # -----------------------------------------------------------------------------
-elif st.session_state.nav_selection == "AI Assistant":
+elif st.session_state.nav_selection == "Dashboard":
+    st.markdown("### 📊 Codebase Analytics")
+    
+    history_data = load_history()
+    if not history_data:
+        st.info("No data available. Run some analyses first!")
+    else:
+        import pandas as pd
+        import plotly.express as px
+        
+        df = pd.DataFrame(history_data)
+        # Parse scores
+        df['score'] = df['quality_grade'].apply(lambda x: int(x.split('/')[0]) if '/' in str(x) and x.split('/')[0].isdigit() else 0)
+        
+        c1, c2 = st.columns(2)
+        
+        with c1:
+            st.markdown("##### Quality Trend")
+            fig = px.line(df.iloc[::-1], x="timestamp", y="score", markers=True, 
+                         labels={"score": "Quality Score", "timestamp": "Time"},
+                         template="plotly_dark")
+            st.plotly_chart(fig, use_container_width=True)
+            
+        with c2:
+            st.markdown("##### Language Distribution")
+            lang_counts = df['language'].value_counts().reset_index()
+            lang_counts.columns = ['language', 'count']
+            fig2 = px.pie(lang_counts, values='count', names='language', hole=0.3, template="plotly_dark")
+            st.plotly_chart(fig2, use_container_width=True)
+
+        st.markdown("##### Score Distribution")
+        fig3 = px.histogram(df, x="score", nbins=10, template="plotly_dark")
+        st.plotly_chart(fig3, use_container_width=True)
+
+# -----------------------------------------------------------------------------
+# PAGE 5: CI/CD SETUP
+# -----------------------------------------------------------------------------
+elif st.session_state.nav_selection == "CI/CD Setup":
+    st.markdown("### ⚙️ CI/CD Workflow Generator")
+    st.caption("Generate automated GitHub Actions to review your code on every push.")
+    
+    ci_lang = st.selectbox("Select Project Type", ["Python (Pytest)", "Node.js (Jest)", "Java (Maven)", "Go (Test)"])
+    
+    if st.button("🚀 Generate Workflow", type="primary"):
+        workflows = {
+            "Python (Pytest)": """name: Python Code Review
+on: [push, pull_request]
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest
+      - name: Run Tests
+        run: pytest""",
+            "Node.js (Jest)": """name: Node.js Code Review
+on: [push, pull_request]
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Use Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+      - run: npm install
+      - run: npm test""",
+            "Java (Maven)": """name: Java Maven Review
+on: [push, pull_request]
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: maven
+      - name: Build with Maven
+        run: mvn -B package --file pom.xml""",
+            "Go (Test)": """name: Go Code Review
+on: [push, pull_request]
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.20'
+      - name: Build
+        run: go build -v ./...
+      - name: Test
+        run: go test -v ./..."""
+        }
+        
+        st.code(workflows[ci_lang], language="yaml")
+        st.download_button("📥 Download .yml", workflows[ci_lang], file_name="review-workflow.yml")
+
+# -----------------------------------------------------------------------------
+# PAGE 6: HISTORY
+# -----------------------------------------------------------------------------
+elif st.session_state.nav_selection == "History":
     st.markdown("### 💬 AI Assistant")
     
     if not st.session_state.ai_suggestions:
@@ -474,7 +661,8 @@ elif st.session_state.nav_selection == "AI Assistant":
                     response = get_chat_response(
                         st.session_state.code_input, 
                         st.session_state.ai_suggestions, 
-                        prompt
+                        prompt,
+                        language=language
                     )
                     st.markdown(response)
                     st.session_state.chat_history.append({"role": "assistant", "content": response})

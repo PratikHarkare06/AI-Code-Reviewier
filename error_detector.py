@@ -156,16 +156,15 @@ def detect_unused_imports(code_string):
     except Exception as e:
         return [{"name": f"Analysis Error", "full_name": str(e)}]
 
-def get_all_errors(code_string):
+def get_all_errors(code_string, language="Python"):
     """
-    Get all detected errors (unused variables and imports).
-    
-    Args:
-        code_string (str): Python code to analyze
-        
-    Returns:
-        dict: Dictionary containing all detected errors
+    Get all detected errors. Currently only supported for Python.
     """
+    if language != "Python":
+        return {
+            'unused_variables': [],
+            'unused_imports': []
+        }
     return {
         'unused_variables': detect_unused_variables(code_string),
         'unused_imports': detect_unused_imports(code_string)

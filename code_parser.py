@@ -3,16 +3,14 @@ import sys
 import io
 import contextlib
 
-def parse_code(code_string):
+def parse_code(code_string, language="Python"):
     """
-    Parse Python code and check for both syntax and runtime errors.
-    
-    Args:
-        code_string (str): Python code to analyze
-        
-    Returns:
-        dict: Result with success status and error details if any
+    Parse code and check for errors. 
+    Currently full static/runtime analysis is only supported for Python.
     """
+    if language != "Python":
+        return {"success": True, "message": f"Syntax check skipped for {language}"}
+
     # First check syntax
     try:
         tree = ast.parse(code_string)
@@ -33,7 +31,6 @@ def parse_code(code_string):
                 'int': int,
                 'float': float,
                 'bool': bool,
-                # Add more safe builtins as needed
             }
         }
         safe_locals = {}
@@ -65,26 +62,6 @@ def parse_code(code_string):
                     return {"success": False, "error": {"message": f"Runtime Error: {error_type} - {str(e)}. Division by zero."}}
                 else:
                     return {"success": False, "error": {"message": f"Runtime Error: {error_type} - {str(e)}"}}
-        
-        # Check for specific patterns that might cause issues
-        if 'numbers[' in code_string and ']' in code_string:
-            # Look for potential index out of bounds
-            lines = code_string.split('\n')
-            for line in lines:
-                if 'numbers[' in line and ']' in line:
-                    # Try to extract the index
-                    import re
-                    match = re.search(r'numbers\[(\d+)\]', line)
-                    if match:
-                        index = int(match.group(1))
-                        # Check if numbers is defined in the code
-                        if 'numbers = [' in code_string:
-                            # Count the elements in the list
-                            list_match = re.search(r'numbers = \[(.*?)\]', code_string)
-                            if list_match:
-                                elements = list_match.group(1).split(',')
-                                if index >= len(elements):
-                                    return {"success": False, "error": {"message": f"Runtime Warning: Index {index} is out of bounds for list with {len(elements)} elements."}}
         
         return {"success": True, "tree": tree}
         

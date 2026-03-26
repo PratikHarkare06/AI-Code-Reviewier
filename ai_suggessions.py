@@ -28,13 +28,26 @@ model = ChatHuggingFace(llm=llm)
 # AI Code Review Function
 # --------------------------------------------------
 
-def get_ai_suggestion(code_string: str) -> str:
+def get_ai_suggestion(code_string: str, language: str = "Python") -> str:
     """
-    Perform a strict, accurate AI-based Python code review.
+    Perform a strict, accurate AI-based code review for multiple languages.
     """
 
+    lang_lower = language.lower()
+    
+    # Language specific standards
+    standards = {
+        "python": "PEP8",
+        "javascript": "ESLint / Airbnb Style Guide",
+        "typescript": "TSLint / Airbnb Style Guide",
+        "java": "Google Java Style Guide",
+        "c++": "Google C++ Style Guide",
+        "go": "Gofmt / Uber Go Style Guide",
+        "rust": "Rustfmt"
+    }.get(lang_lower, "standard coding practices")
+
     prompt = f"""
-You are a **senior Python engineer and professional code reviewer**.
+You are a **senior {language} engineer and professional code reviewer**.
 
 Your output MUST be:
 - Factually correct
@@ -47,17 +60,16 @@ STRICT RULES (DO NOT BREAK):
 - Do NOT contradict yourself
 - Do NOT analyze code that is not shown
 - Do NOT flag variables/imports as unused if they are used
-- NameError / TypeError are NOT syntax errors
 - Static analysis must be based ONLY on the improved code
 
 --------------------------------------------------
 
 STEP 1: ANALYZE ORIGINAL CODE
 
-Identify ONLY real issues and classify them correctly:
-- Syntax Error → invalid Python syntax
-- Runtime Error → NameError, TypeError, etc.
-- PEP8 Issue → formatting/style only
+Identify ONLY real issues and classify them correctly (use {language} terminology):
+- Syntax Error → invalid {language} syntax
+- Runtime Error → potential errors during execution
+- Style Issue → formatting according to {standards}
 - Unused Code → ONLY if never referenced
 
 --------------------------------------------------
@@ -66,13 +78,13 @@ STEP 2: WRITE IMPROVED CODE
 
 Rules:
 - Fix ONLY the issues identified
-- Remove ALL unused imports and variables
+- Remove ALL unused imports/dependencies and variables
 - Do NOT introduce new logic
-- Use f-strings instead of string concatenation
+- Use modern {language} best practices
 - Keep the code minimal and clean
-- The improved code MUST be valid Python
-- CRITICAL: Analyze the improved code and remove any imports/variables that are not used
-- IMPORTANT: Use proper Python indentation (4 spaces) and formatting
+- The improved code MUST be valid {language}
+- CRITICAL: Analyze the improved code and remove any parts that are not used
+- IMPORTANT: Use proper {language} indentation (usually 4 spaces or 2 spaces)
 - IMPORTANT: Preserve line breaks and code structure
 
 --------------------------------------------------
@@ -99,8 +111,8 @@ For each improvement made, provide detailed explanations:
 - Team collaboration advantages
 - Future maintenance considerations
 
-**Best Practices & PEP8:**
-- Python coding standards compliance
+**Best Practices & Standards:**
+- {language} coding standards compliance ({standards})
 - Industry best practices
 - Security implications
 - Error handling improvements
@@ -110,7 +122,7 @@ For each improvement made, provide detailed explanations:
 STEP 4: FINAL STATIC ANALYSIS (ON IMPROVED CODE ONLY)
 
 Report:
-- Unused Imports: List ALL unused imports in improved code
+- Unused Imports/Dependencies: List ALL unused imports in improved code
 - Unused Variables: List ALL unused variables in improved code
 - Syntax Errors: List ALL syntax errors in improved code
 - Runtime Risks: List ALL potential runtime issues in improved code
@@ -125,7 +137,7 @@ REQUIRED OUTPUT FORMAT (EXACT)
 [Short, factual summary]
 
 ## Original Code
-```python
+```{lang_lower}
 {code_string}
 ```
 
@@ -134,8 +146,8 @@ REQUIRED OUTPUT FORMAT (EXACT)
 (If none: No critical issues found.)
 
 ## Improved Code
-```python
-[Write ONLY the improved code here with proper Python indentation and formatting]
+```{lang_lower}
+[Write ONLY the improved code here with proper {language} indentation and formatting]
 ```
 
 ## Detailed Explanations
@@ -149,8 +161,8 @@ REQUIRED OUTPUT FORMAT (EXACT)
 ### 📖 Readability & Maintainability
 [Explain code clarity improvements, documentation benefits, team collaboration advantages, and future maintenance considerations]
 
-### 📋 Best Practices & PEP8
-[Explain Python coding standards compliance, industry best practices, security implications, and error handling improvements]
+### 📋 Best Practices & Standards
+[Explain {language} coding standards compliance, industry best practices, security implications, and error handling improvements]
 
 ## Recommendations
 - Clear, actionable recommendation
@@ -159,7 +171,7 @@ REQUIRED OUTPUT FORMAT (EXACT)
 X/10 (Based on Correctness, Efficiency, Security, & Readability)
 
 ## Static Analysis Results
-- Unused Imports: [List the unused imports found in improved code, or "None"]
+- Unused Imports/Dependencies: [List the unused imports found in improved code, or "None"]
 - Unused Variables: [List the unused variables found in improved code, or "None"]
 - Syntax Errors: [List syntax errors in improved code, or "None"]
 - Runtime Risks: [List runtime risks in improved code, or "None"]
@@ -167,9 +179,9 @@ X/10 (Based on Correctness, Efficiency, Security, & Readability)
 --------------------------------------------------
 
 CODE TO ANALYZE
-<python>
+<{lang_lower}>
 {code_string}
-</python>
+</{lang_lower}>
 """
 
     try:
@@ -182,17 +194,18 @@ CODE TO ANALYZE
 # Chat Functionality 
 # --------------------------------------------------
 
-def get_chat_response(code_context: str, analysis_result: str, user_question: str) -> str:
+def get_chat_response(code_context: str, analysis_result: str, user_question: str, language: str = "Python") -> str:
     """
     Handle user follow-up questions based on the code and analysis.
     """
+    lang_lower = language.lower()
     prompt = f"""
-You are a helpful AI coding assistant. The user has some code and an analysis of that code. 
+You are a helpful AI coding assistant specializing in {language}. The user has some code and an analysis of that code. 
 They are asking a follow-up question. Answer their question clearly and concisely.
 
 CONTEXT:
 Code:
-```python
+```{lang_lower}
 {code_context}
 ```
 
@@ -210,6 +223,57 @@ YOUR ANSWER:
     except Exception as error:
         return f"Error getting chat response: {str(error)}"
 
+
+# --------------------------------------------------
+# Unit Test Generation Function
+# --------------------------------------------------
+
+def get_unit_tests(code_string: str, language: str = "Python") -> str:
+    """
+    Generate unit tests for the provided code.
+    """
+    lang_lower = language.lower()
+    framework = {
+        "python": "pytest",
+        "javascript": "Jest",
+        "typescript": "Jest",
+        "java": "JUnit",
+        "c++": "Google Test",
+        "go": "testing package",
+        "rust": "built-in test modules"
+    }.get(lang_lower, "standard testing framework")
+
+    prompt = f"""
+You are a **senior QA engineer and testing expert**.
+The user wants to generate unit tests for the following {language} code.
+
+{language} Source Code:
+```{lang_lower}
+{code_string}
+```
+
+STRICT RULES:
+- Use the **{framework}** framework.
+- Write comprehensive, isolated unit tests.
+- Cover edge cases, success scenarios, and failure scenarios.
+- Do NOT include the original code in your output, ONLY the test code.
+- Ensure the test code is valid {language} and ready to run.
+- Include necessary imports for the testing framework.
+
+REQUIRED OUTPUT FORMAT:
+## Unit Tests ({framework})
+```{lang_lower}
+[Write the test code here]
+```
+
+## How to Run
+[Short instructions on how to install and run the tests]
+"""
+    try:
+        response = model.invoke(prompt)
+        return response.content
+    except Exception as error:
+        return f"Error generating unit tests: {str(error)}"
 
 # --------------------------------------------------
 # Local Test (Optional)
