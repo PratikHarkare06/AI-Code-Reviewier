@@ -147,67 +147,17 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # -----------------------------------------------------------------------------
-# Sidebar & Configuration
-# -----------------------------------------------------------------------------
-with st.sidebar:
-    st.markdown("""
-        <div style="text-align: center; padding-bottom: 20px;">
-            <img src="https://cdn-icons-png.flaticon.com/512/2920/2920277.png" width="60" style="margin-bottom: 10px;">
-            <h1 style="margin-top: 0; font-size: 1.8rem; padding-bottom: 5px;">AI Code Reviewer</h1>
-            <p style="color: #8b949e; font-size: 0.85rem; margin: 0;">Elevate Your Code Quality</p>
-        </div>
-    """, unsafe_allow_html=True)
-    
-    st.markdown("---")
-    
-    # Navigation
-    if "nav_selection" not in st.session_state:
-        st.session_state.nav_selection = "Code Editor"
-        
-    st.subheader("📍 Navigation")
-    pages = ["Code Editor", "Analysis Report", "AI Assistant", "Dashboard", "CI/CD Setup", "History"]
-    page_selection = st.radio(
-        "Go to:", 
-        pages, 
-        index=pages.index(st.session_state.nav_selection),
-        key="nav_radio",
-        label_visibility="collapsed"
-    )
-    # Sync radio with session state manually if needed, or rely on key
-    if st.session_state.nav_radio != st.session_state.nav_selection:
-        st.session_state.nav_selection = st.session_state.nav_radio
-        st.rerun()
-
-    st.markdown("---")
-    
-    st.subheader("⚙️ Configuration")
-    language = st.selectbox("Source Language", ["Python", "JavaScript", "TypeScript", "Java", "C++", "Go", "Rust"], index=0)
-    
-    st.markdown("### Focus Areas")
-    check_security = st.checkbox("Security Audit", value=True)
-    check_perf = st.checkbox("Performance Audit", value=True)
-    check_style = st.checkbox("Style & Standards", value=True)
-    check_bugs = st.checkbox("Logic & Bugs", value=True)
-    
-    st.markdown("---")
-    st.markdown("### 🛡️ Advanced Analysis")
-    deep_scan = st.toggle("Deep Vulnerability Scan", value=False)
-    complex_analysis = st.toggle("Code Complexity Analysis", value=False)
-
-    st.markdown("---")
-    st.markdown("### 🎨 Editor Settings")
-    editor_theme = st.selectbox("Editor Theme", 
-        ["monokai", "tomorrow", "twilight", "github", "chrome", "solarized_dark", "solarized_light", "nord_dark"],
-        index=0)
-    font_size = st.slider("Font Size", 8, 32, 14)
-    key_binding = st.selectbox("Keybinding", ["vscode", "vim", "emacs"], index=0)
-
-
 # -----------------------------------------------------------------------------
 # Session State & Logic
 # -----------------------------------------------------------------------------
-
-# (Keep existing session state init)
+if 'nav_selection' not in st.session_state:
+    st.session_state.nav_selection = "Code Editor"
+if 'editor_theme' not in st.session_state:
+    st.session_state.editor_theme = "monokai"
+if 'font_size' not in st.session_state:
+    st.session_state.font_size = 14
+if 'key_binding' not in st.session_state:
+    st.session_state.key_binding = "vscode"
 if 'code_input' not in st.session_state:
     st.session_state.code_input = ""
 if 'analysis_result' not in st.session_state:
@@ -226,6 +176,57 @@ if 'code_explanation' not in st.session_state:
     st.session_state.code_explanation = None
 if 'pr_summary' not in st.session_state:
     st.session_state.pr_summary = None
+
+# Sidebar & Configuration
+# -----------------------------------------------------------------------------
+with st.sidebar:
+    st.markdown("""
+        <div style="text-align: center; padding-bottom: 20px;">
+            <img src="https://cdn-icons-png.flaticon.com/512/2920/2920277.png" width="60" style="margin-bottom: 10px;">
+            <h1 style="margin-top: 0; font-size: 1.8rem; padding-bottom: 5px;">AI Code Reviewer</h1>
+            <p style="color: #8b949e; font-size: 0.85rem; margin: 0;">Elevate Your Code Quality</p>
+        </div>
+    """, unsafe_allow_html=True)
+    
+    st.markdown("---")
+    st.subheader("📍 Navigation")
+    pages = ["Code Editor", "Analysis Report", "AI Assistant", "Dashboard", "CI/CD Setup", "History"]
+    page_selection = st.radio(
+        "Go to:", 
+        pages, 
+        index=pages.index(st.session_state.nav_selection),
+        key="nav_radio"
+    )
+    if st.session_state.nav_radio != st.session_state.nav_selection:
+        st.session_state.nav_selection = st.session_state.nav_radio
+        st.rerun()
+
+    st.markdown("---")
+    st.subheader("⚙️ Configuration")
+    language = st.selectbox("Source Language", ["Python", "JavaScript", "TypeScript", "Java", "C++", "Go", "Rust"], index=0)
+    
+    st.markdown("### Focus Areas")
+    st.checkbox("Security Audit", value=True, key="check_security")
+    st.checkbox("Performance Audit", value=True, key="check_perf")
+    st.checkbox("Style & Standards", value=True, key="check_style")
+    st.checkbox("Logic & Bugs", value=True, key="check_bugs")
+    
+    st.markdown("---")
+    st.markdown("### 🛠️ Advanced Analysis")
+    st.toggle("Deep Vulnerability Scan", value=False, key="deep_scan")
+    st.toggle("Code Complexity Analysis", value=False, key="complex_analysis")
+
+    st.markdown("---")
+    st.markdown("### 🎨 Editor Settings")
+    themes = ["monokai", "tomorrow", "twilight", "github", "chrome", "solarized_dark", "solarized_light", "nord_dark"]
+    st.session_state.editor_theme = st.selectbox("Editor Theme", 
+        themes, 
+        index=themes.index(st.session_state.get('editor_theme', 'monokai')))
+    st.session_state.font_size = st.slider("Font Size", 8, 32, st.session_state.get('font_size', 14))
+    key_bindings = ["vscode", "vim", "emacs"]
+    st.session_state.key_binding = st.selectbox("Keybinding", 
+        key_bindings, 
+        index=key_bindings.index(st.session_state.get('key_binding', 'vscode')))
 
 # Header
 st.title("Intelligent Code Analysis")
@@ -320,9 +321,9 @@ if st.session_state.nav_selection == "Code Editor":
         code = st_ace(
             value=st.session_state.code_input,
             language=language.lower(),
-            theme=editor_theme,
-            keybinding=key_binding,
-            font_size=font_size,
+            theme=st.session_state.editor_theme,
+            keybinding=st.session_state.key_binding,
+            font_size=st.session_state.font_size,
             tab_size=4,
             height=500,
             key="ace_editor"
