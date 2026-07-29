@@ -1,5 +1,9 @@
 # AI Code Reviewer 🤖
 
+📸 Application Preview
+<img width="1470" height="842" alt="Screenshot 2026-07-26 at 6 43 18 PM" src="https://github.com/user-attachments/assets/ec774cc1-07b3-4cf2-b361-3a5dac133fdc" />
+
+
 An intelligent, AI-powered code analysis tool designed to help developers write better, cleaner, and more secure code. This application leverages **Streamlit** for the frontend and **Hugging Face models** (Qwen 2.5) via **LangChain** to provide professional-grade insights across multiple languages.
 
 ## 🚀 Key Features
